@@ -1,0 +1,379 @@
+---
+title: 'Momento de Retroalimentación: Módulo 1'
+author: "Ana Lucía Cárdenas Pérez A01284090"
+date: "2023-08-24"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("Hmisc")
+install.packages("printr")
+library(printr)
+```
+
+```{r}
+data <- read.csv("precios_autos.csv")
+
+```
+
+##1.1.1 Calcula medidas estadisticas apropiadas para las variables 
+```{r}
+#cargamos librerias necesarias
+library(ggplot2)
+
+data$cylindernumber <- ifelse(data$cylindernumber == "four", 4, data$cylindernumber)
+
+data$cylindernumber <- ifelse(data$cylindernumber == "five", 5, data$cylindernumber)
+
+data$cylindernumber <- ifelse(data$cylindernumber == "six", 6, data$cylindernumber)
+
+data$cylindernumber <- ifelse(data$cylindernumber == "two", 2, data$cylindernumber)
+
+data$cylindernumber <- ifelse(data$cylindernumber == "three", 3, data$cylindernumber)
+
+data$cylindernumber <- ifelse(data$cylindernumber == "twelve", 12, data$cylindernumber)
+
+data$cylindernumber <- ifelse(data$cylindernumber == "eight", 8, data$cylindernumber)
+
+data$cylindernumber <- as.numeric(data$cylindernumber)
+```
+###Variables Cuantitativas
+```{r}
+#Juntaremos todas las variables cuantitativas en un solo dataset
+varCuant <- data[, sapply(data, is.numeric)] #Se almacenan en un dataset todas las variables cuantitativas
+```
+
+```{r}
+#Sacaremos las medidas estadisticas de las variables cuantitativas
+#Media
+media <- colMeans(varCuant, na.rm = TRUE)
+mediaDF <- data.frame(media)
+
+#Desviacion Estandar
+desEst <- apply(varCuant, 2, sd)
+desEst <- data.frame(varCuant)
+
+#Cuantiles
+cuanCuant <- apply(varCuant , 2, quantile, probs = c(0.25, 0.5, 0.75))
+cuanCuantDF <- data.frame(cuanCuant)
+print(cuanCuantDF)
+```
+### Variables Cualitativas
+```{r}
+#Guardaremos todas las variables Cualitativas en un solo dataset
+varCuali <- data[, sapply(data, function(x) is.factor(x) || is.character(x))]
+```
+
+```{r}
+#Sacaremos las frecuencias de los valores de las variables cualitativas y las visualizaremos en una sola tabla
+#Frecuencias
+freqTable <- lapply(varCuali, table)
+
+sumFreqTable <- lapply(freqTable, function(table) {
+  # Usamos la función aggregate para sumar los valores iguales
+  aggregate(Freq ~ ., data = as.data.frame(table), sum)
+})
+
+# Luego, puedes imprimir las tablas de frecuencia sumadas
+for (i in seq_along(sumFreqTable)) {
+  cat("Tabla de frecuencia sumada para la columna", names(sumFreqTable)[i], ":\n")
+  print(sumFreqTable[[i]])
+  cat("\n")
+}
+```
+
+
+
+
+##1.1.2. Explorando los datos usando herramientas de visualización
+###Medidas de Posicion
+```{r}
+#Haremos el boxplot de las variables cuantitativas con el precio
+boxplot(varCuant$price, main = "Boxplot Cuantitativas-precio")
+
+#Ahora haremos el box plot de todas las variables cuantitativas
+library(tidyr)
+data_long <- gather(varCuant)
+
+ggplot(data_long, aes(x = key, y = value)) + geom_boxplot() + xlab("Columnas") + ylab("Valores") + ggtitle("Boxplots Cuantitativas")
+
+```
+
+###Analisis de distribucion
+```{r}
+#Histogramas
+
+# Hist Precio
+hist(varCuant$price, col = "blue", main = "Histograma de Price", xlab = "Precio", ylab = "Frecuencia")
+
+# Hist Engine Size
+hist(varCuant$enginesize, col = "orange", main = "Histograma de Engine Size", xlab = "Engine Size", ylab = "Frecuencia")
+
+# Hist Curb Weight
+hist(varCuant$curbweight, col = "green", main = "Histograma de Curb Weight", xlab = "Curb Weight", ylab = "Frecuencia")
+
+# Hist Horse Power
+hist(varCuant$horsepower, col = "black", main = "Histograma de Horse Power", xlab = "Horse Power", ylab = "Frecuencia")
+
+# Hist Curb Width
+hist(varCuant$carwidth, col = "red", main = "Histograma Car Width", xlab = "Car Width", ylab = "Frecuencia")
+
+# Hist Cylinder Number
+hist(table(varCuant$cylindernumber), col = "yellow", main = "Histograma de Cylinder Number", xlab = "Cylinder Number", ylab = "Frecuencia")
+
+# Hist Car Length
+hist(varCuant$carlength, col = "brown", main = "Histograma de Car Length", xlab = "Car Length", ylab = "Frecuencia")
+
+
+
+
+
+
+
+
+```
+### Analiza colinealidad
+```{r}
+coefCorrCuant <- cor(varCuant,data$price)
+print("Coeficiente Correlación entre variables cuantitativas y precio")
+print(coefCorrCuant)
+```
+
+### Variables cualitativas -- INTERPRETAR GRAFICAS
+```{r}
+
+barplot(table(varCuali$carbody), main = "Variables Cualitativas - Car Body", xlab = "Variables Cualitativas", ylab = "Car body")
+
+barplot(table(varCuali$drivewheel), main = "Variables Cualitativas - Drive Wheel", xlab = "Variables Cualitativas", ylab = "Drive Wheel")
+
+barplot(table(varCuali$enginetype), main = "Variables Cualitativas - Engine Type", xlab = "Variables Cualitativas", ylab = "Engine Type")
+
+barplot(table(varCuali$CarName), main = "Variables Cualitativas - Car Name", xlab = "Variables Cualitativas", ylab = "Car Name")
+
+barplot(table(varCuali$fueltype), main = "Variables Cualitativas - Fuel Type", xlab = "Variables Cualitativas", ylab = "Fuel Type")
+
+barplot(table(varCuali$enginelocation), main = "Variables Cualitativas - Engine Location", xlab = "Variables Cualitativas", ylab = "Engine Location")
+
+# Convertir el conjunto de datos a formato largo (tidy)
+library(tidyr)
+data_long <- gather(varCuali)
+
+# Crear un gráfico de barras utilizando ggplot2
+ggplot(data_long, aes(x = value, fill = key)) + geom_bar() + facet_wrap(~ key, scales = "free_x") + xlab("Categorias") + ylab("Frecuencia") + ggtitle("Diagramas de Barras Cualitativas")
+```
+Estas gráficas de barras nos muestran la frecuencia en la que las diferentes categorías de las variables del dataset contienen. Las graficas cualitativas mostradas nos muestran que tipos de carbody se presentan más en la lista, el modelo del carro que más se repite, en este caso la variable car name no se puede visualizar de una manera muy clara ya que al ser muchos los modelosde auto presentes, es dificil visualizar todos los nombres de la lista. En el caso de Drivewheel podemos ver que el más común es el fwd o front wheel drive y el menos común es el 4wd o four wheel drive. En su gran mayoría el motor se encuentra en la parte delantera  el tipo de gasolina que utilizan es gasolina normal, y el motor más común es el ohc.
+
+##3.Identifica problemas de calidad de datos
+
+```{r}
+# Identificar valores faltantes
+valFaltPrecio <- sum(is.na(varCuant$price))
+print("Valores Faltantes Price")
+print(valFaltPrecio)
+
+# Engine size
+valFaltES <- sum(is.na(varCuant$enginesize))
+print("Valores Faltantes Engine Size")
+print(valFaltES)
+
+# CurbWeight
+valFaltCurbW <- sum(is.na(varCuant$curbweight))
+print("Valores Faltantes Curb Weight")
+print(valFaltCurbW)
+
+# Horse Power
+valFaltHP <- sum(is.na(varCuant$horsepower))
+print("Valores Faltantes Horse Power")
+print(valFaltHP)
+
+# Car Width
+valFaltCarW <- sum(is.na(varCuant$carwidth))
+print("Valores Faltantes Car Width")
+print(valFaltCarW)
+
+# Clinder Number
+valFaltCylNum <- sum(is.na(varCuant$cylindernumber))
+print("Valores Faltantes Cylinder Number")
+print(valFaltCylNum)
+
+# Car Length
+valFalCityMPG <- sum(is.na(varCuant$citympg))
+print("Valores Faltantes Car Length")
+print(valFalCityMPG)
+
+
+# Identificar outliers usando el método IQR
+
+# Engine Size
+outliersES <- boxplot.stats(varCuant$enginesize)$out
+print("Outliers Engine Size")
+print(outliersES)
+
+# Curb Weight
+outliersCurbW <- boxplot.stats(varCuant$curbweight)$out
+print("Outliers Curb Weight")
+print(outliersCurbW)
+
+# Horse Power
+outliersHP <- boxplot.stats(varCuant$horsepower)$out
+print("Outliers Horse Power")
+print(outliersHP)
+
+# Car Width
+outliersCarW <- boxplot.stats(varCuant$carwidth)$out
+print("Outliers Car Width")
+print(outliersCarW)
+
+# Cylinder Number
+outliersCylNum <- boxplot.stats(varCuant$cylindernumber)$out
+print("Oultiers Cylinder Number")
+print(outliersCylNum)
+
+# Car Length
+outliertsCityMPG <- boxplot.stats(varCuant$citympg)$out
+print("Outliers City MPG")
+print(outliertsCityMPG)
+
+```
+
+##1.1.4. Con base en este análisis selecciona al menos 6 variables
+Variables seleccionadas:
+- Engine Size
+- Curb Weight
+- Horse Power
+- Car Width
+- Cylinder Number
+- City Mpg
+
+La razón por la que estas son las variables seleccionadas es porque anteriormente se llevó a cabo un análisis de correlación entre las variables cuantitativas y la variable precio. En ese análisis buscamos que variables tenian el valor de correlación más cercano a 1 o -1. En este caso las 5 variables más cercanas a 1 (en orden de mayor a menor) fueron, Engine Size, Curb Weight, Horse Power, Car Width, Cylinder Number y una de las más cercanas a -1 fue la de City MPG. Elegí City MPG ya que su correlación está cerca del valor -1 y ya que puede ayudarnos a balancear mejor el algoritmo de predicción, ya que al ser un valor que entre más grande sea, el precio disminuye por los gastos que este le conllevaría al cliente ya que la tenga en su posesión.
+
+
+## 1.2.1 Preparacion base de datos
+# Momento de Retroalimentación: Módulo 1 Construcción de un modelo estadístico base (Portafolio Implementación)
+
+## Regresion Lineal
+```{r}
+# Cargar la biblioteca nortest
+library(nortest)
+
+data_selected <- data[, c("enginesize", "curbweight", "horsepower", "carwidth", "cylindernumber", "citympg")]
+
+lm_model <- lm(data$price ~ ., data = data_selected)
+lm_model
+
+# Resumen del modelo
+summary(lm_model) # Revisar por que salen valores NA en algunas variables
+
+ad.test(lm_model$residuals) # ¿cuál es el modelo con el que te quedas? ¿cuáles variables predictoras son significativas? ¿cuál es el efecto de esas variables sobre la variable respuesta?
+ 
+qqnorm(lm_model$residuals) # ¿Se puede resolver de alguna forma? 
+qqline(lm_model$residuals)
+
+```
+La gráfica muestra que en su mayoría los datos están distribuidos "normal" mientras que en las orillas podemos ver que existen datos que no se están ajustando a la línea recta por lo que los datos no siguen una distribución normal en su totalidad. .En el siguiente bloque vamos a ver como se comportan estos datos en un histograma para poder ver que tipo de curtosis tiene.
+
+```{r}
+hist(lm_model$residuals, freq = FALSE,ylim = c(0,0.00020), xlab = "Residuos", col = 0)
+lines(density(lm_model$residuals),col = "red")
+curve(dnorm(x, mean=mean(lm_model$residuals), sd=sd(lm_model$residuals)), from =
+min(lm_model$residuals), to = max(lm_model$residuals), add=TRUE,col = "blue", lwd = 2)
+```
+
+Lo mismo podemos ver en este histograma, donde los datos de la línea roja no siguen la forma exacta de la azul, por lo que la desviación sigue existiendo. La curtosis que se presenta en este histograma es una curtosis "leptocúrtica", es decir, que contienen datos atípicos. En el análisis anterior pudimos encontrar que hay algunas variables como cylinder number y engine size, que tienen muchos outliers en sus datos.
+
+
+Ahora probaremos con otro modelo para poder comparar cual es mejor para esta situación:
+
+## Regresion Lineal Multiple
+
+```{r}
+columnasCuant <- c(9,11,13,14,17,19,21)
+n <- length(columnasCuant)
+d <- matrix(NA, nrow = n, ncol = 7)
+
+for (i in 1:n) {
+  indexColumnas <- columnasCuant[i]
+  summary_stats <- summary(data[, indexColumnas])
+  d[i, 1:6] <- as.numeric(summary_stats[c("Min.", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max.")])
+  d[i, 7] <- sd(data[, indexColumnas])
+}
+
+m <- as.data.frame(d)
+rownames(m) <- colnames(data)[columnasCuant]  # Usa los nombres de columna originales
+colnames(m) <- c("Minimo", "Q1", "Mediana", "Media", "Q3", "Maximo", "Desv Est")
+round(m,2)
+```
+
+```{r,warning=FALSE}
+
+library(Hmisc)
+Rc = rcorr(as.matrix(data[, columnasCuant]))
+Rc
+```
+
+
+```{r, message = "FALSE", warning=FALSE}
+library(ggplot2)
+library(GGally)
+dataCuant <- data[, columnasCuant]
+
+colnames(dataCuant) <- colnames(data)[columnasCuant]
+
+ggpairs(dataCuant, lower = list(continuous = "smooth"), diag = list(continuous = "barDiag"), axisLabels = "none")
+
+```
+
+```{r}
+R = lm(data$price ~ data$carwidth+data$curbweight+data$cylindernumber+data$enginesize+data$horsepower+data$citympg, data = data)
+summary(R)
+```
+
+###Seleccion de mejor modelo
+```{r}
+step(R,direction = "both", trace = 1)
+```
+### Verificacion de significativo
+
+```{r}
+R1 = lm(data$price ~ data$carwidth + data$curbweight + data$enginesize + 
+    data$horsepower, data=data)
+S = summary(R1)
+S
+```
+
+###  Intervalo de confianza
+```{r}
+confint(R1, level = 0.96)
+```
+
+### Verificacion de supuestos
+
+#### Normalidad
+```{r}
+shapiro.test(R1$residuals)
+```
+
+```{r}
+E = R1$residuals
+Y= R1$fitted.values
+
+qqnorm(E)
+qqline(E, col = "red")
+
+hist(E, col = "lightcyan", freq = FALSE, main = "Histograma de Residuos", ylim = c(0,0.00020), xlab = "", ylab = "Densidad")
+lines(density(E), col = "red")
+curve(dnorm(x,mean=mean(E), sd=sd(E)), add = TRUE, col = "blue", lwd = 2)
+```
+
+
+# ¿Qué modelo es mejor?
+Se llevaron a cabo pruebas con dos modelos de regresion, uno lineal y otro lineal multiple utilizando las mismas variables en ambas. El modelo de regresion lineal utilizó todas las variables cuantitativas que elegimos para darnos el valor de R squared, el cual fue de 0.8145, mientras que al realizar el proceso de regresión lineal multiple pudimos obtener cuales columnas podrían darnos un mejor valor en r squared. Ambos análisis se iniciaron con las columnas de "carwidth", "curbweight", "cylindernumber", "enginesize", "horsepower", "citympg" y "price". En el de regresión lineal simple todo el proceso se llevó a cabo con esas columnas, mientras que en regresión multiple iniciamos con esas columnas y después obtuvimos una nueva formula que nos ayudó a obtener un mejor valor de r squared, la nueva formula utilizó las columnas "price", "curbweight", "enginesize" y "horsepower", lo cual nos dió un valor de r squared de 0.8162, una diferencia dw 0.0017.
+
+Por lo que llegamos a la conclusión de que el modelo de regresión lineal multiple es una mejor opción ya que al tener muchas variables que pueden mover nuestros resultados, este nos puede dar aquellas que nos van a dar los mejores resultados, o la mejor posible predicción.
+
+
+
+
